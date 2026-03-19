@@ -1,12 +1,12 @@
 // utils/config-negocio.js - VERSIÓN MULTI-TENANT CORREGIDA
-// CLIENTE: LizCintado Manicure y Pedicure
+// CLIENTE: Morena nails
 
 console.log('🏢 config-negocio.js cargado');
 
 // ============================================
 // 🔥 CONFIGURACIÓN POR CLIENTE - ¡LO ÚNICO QUE CAMBIA!
 // ============================================
-const NEGOCIO_ID_POR_DEFECTO = 'f63ba471-fb31-4249-9611-1fe7b8f0ad22'; // ID de LizCintado Manicure y Pedicure
+const NEGOCIO_ID_POR_DEFECTO = '21111ab4-96ee-4f5e-a5de-c7f9cb32c328'; // ID de Morena nails
 
 // Hacer accesible globalmente
 window.NEGOCIO_ID_POR_DEFECTO = NEGOCIO_ID_POR_DEFECTO;
@@ -116,7 +116,7 @@ window.cargarConfiguracionNegocio = async function(forceRefresh = false) {
  */
 window.getNombreNegocio = async function() {
     const config = await window.cargarConfiguracionNegocio();
-    return config?.nombre || 'LizCintado Manicure y Pedicure';
+    return config?.nombre || 'Morena nails';
 };
 
 /**
@@ -124,7 +124,7 @@ window.getNombreNegocio = async function() {
  */
 window.getTelefonoDuenno = async function() {
     const config = await window.cargarConfiguracionNegocio();
-    return config?.telefono || '56886503';
+    return config?.telefono || '53894025';
 };
 
 /**
@@ -132,7 +132,7 @@ window.getTelefonoDuenno = async function() {
  */
 window.getEmailNegocio = async function() {
     const config = await window.cargarConfiguracionNegocio();
-    return config?.email || 'lizcintado2005@gmail.com';
+    return config?.email || 'dailycapote0@gmail.com';
 };
 
 /**
@@ -164,7 +164,7 @@ window.getHorarioAtencion = async function() {
  */
 window.getMensajeBienvenida = async function() {
     const config = await window.cargarConfiguracionNegocio();
-    return config?.mensaje_bienvenida || '¡Bienvenida a LizCintado Manicure y Pedicure!';
+    return config?.mensaje_bienvenida || '¡Bienvenida a Morena nails!';
 };
 
 /**
@@ -180,7 +180,7 @@ window.getMensajeConfirmacion = async function() {
  */
 window.getNtfyTopic = async function() {
     const config = await window.cargarConfiguracionNegocio();
-    return config?.ntfy_topic || 'lizcintado';
+    return config?.ntfy_topic || 'morena-nails';
 };
 
 /**
@@ -205,5 +205,5 @@ setTimeout(async () => {
     await window.cargarConfiguracionNegocio();
 }, 500);
 
-console.log('✅ config-negocio.js listo para LizCintado Manicure y Pedicure');
+console.log('✅ config-negocio.js listo para Morena nails');
 console.log('🏷️  ID configurado:', NEGOCIO_ID_POR_DEFECTO);

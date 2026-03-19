@@ -1,22 +1,22 @@
-// sw.js - Service Worker para LizCintado Manicure y Pedicure
+// sw.js - Service Worker para Morena nails
 
-const CACHE_NAME = 'lizcintado-v1';
+const CACHE_NAME = 'morena-nails-v1';
 const urlsToCache = [
-  '/lizcintado/',
-  '/lizcintado/index.html',
-  '/lizcintado/admin.html',
-  '/lizcintado/admin-login.html',
-  '/lizcintado/setup-wizard.html',
-  '/lizcintado/editar-negocio.html',
-  '/lizcintado/manifest.json',
-  '/lizcintado/icons/icon-72x72.png',
-  '/lizcintado/icons/icon-96x96.png',
-  '/lizcintado/icons/icon-128x128.png',
-  '/lizcintado/icons/icon-144x144.png',
-  '/lizcintado/icons/icon-152x152.png',
-  '/lizcintado/icons/icon-192x192.png',
-  '/lizcintado/icons/icon-384x384.png',
-  '/lizcintado/icons/icon-512x512.png'
+  '/morena-nails/',
+  '/morena-nails/index.html',
+  '/morena-nails/admin.html',
+  '/morena-nails/admin-login.html',
+  '/morena-nails/setup-wizard.html',
+  '/morena-nails/editar-negocio.html',
+  '/morena-nails/manifest.json',
+  '/morena-nails/icons/icon-72x72.png',
+  '/morena-nails/icons/icon-96x96.png',
+  '/morena-nails/icons/icon-128x128.png',
+  '/morena-nails/icons/icon-144x144.png',
+  '/morena-nails/icons/icon-152x152.png',
+  '/morena-nails/icons/icon-192x192.png',
+  '/morena-nails/icons/icon-384x384.png',
+  '/morena-nails/icons/icon-512x512.png'
 ];
 
 // ============================================
@@ -108,7 +108,7 @@ self.addEventListener('fetch', event => {
           }
           // Si no hay cache y es imagen, devolver icon por defecto
           if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg|webp)$/)) {
-            return caches.match('/lizcintado/icons/icon-192x192.png');
+            return caches.match('/morena-nails/icons/icon-192x192.png');
           }
           return new Response('Error de red', { status: 408 });
         });
@@ -138,6 +138,6 @@ self.addEventListener('message', event => {
   }
 });
 
-console.log('✅ Service Worker configurado para LizCintado Manicure y Pedicure');
+console.log('✅ Service Worker configurado para Morena nails');
 console.log('📦 Cache:', CACHE_NAME);
 console.log('📄 Archivos a cachear:', urlsToCache.length);
