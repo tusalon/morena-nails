@@ -1,0 +1,22 @@
+{
+  "name": "LizCintado Manicure y Pedicure",
+  "short_name": "LizCintado",
+  "description": "Manicure y Pedicure - Tu espacio de cuidado personal",
+  "start_url": "/lizcintado/",
+  "scope": "/lizcintado/",
+  "display": "standalone",
+  "background_color": "#ec4899",
+  "theme_color": "#ec4899",
+  "icons": [
+    {
+      "src": "/lizcintado/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/lizcintado/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
