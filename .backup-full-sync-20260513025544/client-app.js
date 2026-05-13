@@ -29,7 +29,6 @@ function ClientApp() {
     const [bookingConfirmed, setBookingConfirmed] = React.useState(null);
     const [userRol, setUserRol] = React.useState('cliente');
     const [history, setHistory] = React.useState(['auth']);
-    const [horariosPorDia, setHorariosPorDia] = React.useState({});
 
     // ============================================
     // DETECTAR SESIÓN AL INICIAR Y REDIRIGIR SEGÚN ROL
@@ -39,18 +38,21 @@ function ClientApp() {
         const profesionalAuth = localStorage.getItem('profesionalAuth');
         const clienteAuth = localStorage.getItem('clienteAuth');
         
+        // Si es admin, redirigir directamente al panel
         if (adminAuth) {
             console.log('👑 Usuario admin detectado, redirigiendo a admin.html');
             window.location.href = 'admin.html';
             return;
         }
         
+        // Si es profesional, redirigir al panel (allí se maneja su rol)
         if (profesionalAuth) {
             console.log('👤 Usuario profesional detectado, redirigiendo a admin.html');
             window.location.href = 'admin.html';
             return;
         }
         
+        // Si es cliente, restaurar sesión y mostrar welcome
         if (clienteAuth) {
             try {
                 const clienteData = JSON.parse(clienteAuth);
@@ -63,6 +65,7 @@ function ClientApp() {
                 localStorage.removeItem('clienteAuth');
             }
         }
+        // Si no hay nada, se queda en 'auth'
     }, []);
 
     // ============================================
@@ -152,20 +155,6 @@ function ClientApp() {
         navigateTo('service');
     };
 
-    const handleServiceSelect = (service) => {
-        setSelectedService(service);
-        setSelectedProfesional(null);
-        setSelectedDate('');
-        setSelectedTime('');
-        setHorariosPorDia({});
-        setTimeout(() => {
-            document.getElementById('profesional-section')?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }, 150);
-    };
-
     const handleLogout = () => {
         localStorage.removeItem('clienteAuth');
         setCliente(null);
@@ -176,6 +165,7 @@ function ClientApp() {
         setUserRol('cliente');
         setHistory(['auth']);
         setStep('auth');
+        // Redirigir a index (ya estamos en index, pero reiniciamos estado)
         window.location.href = 'index.html';
     };
 
@@ -242,26 +232,17 @@ function ClientApp() {
                         <div className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-20">
                             {/* SECCIÓN 1: SERVICIOS */}
                             <ServiceSelection 
-                                onSelect={handleServiceSelect} 
+                                onSelect={setSelectedService} 
                                 selectedService={selectedService}
                             />
                             
-                            {/* SECCIÓN 2: PROFESIONALES - CON selectedService */}
+                            {/* SECCIÓN 2: PROFESIONALES */}
                             {selectedService && (
                                 <div id="profesional-section">
-                                    {selectedService.esMultiple ? (
-                                        <MultiProfesionalSelector
-                                            onSelect={setSelectedProfesional}
-                                            selectedProfesional={selectedProfesional}
-                                            selectedService={selectedService}
-                                        />
-                                    ) : (
-                                        <ProfesionalSelector
-                                            onSelect={setSelectedProfesional}
-                                            selectedProfesional={selectedProfesional}
-                                            selectedService={selectedService}
-                                        />
-                                    )}
+                                    <ProfesionalSelector 
+                                        onSelect={setSelectedProfesional} 
+                                        selectedProfesional={selectedProfesional}
+                                    />
                                 </div>
                             )}
                             
@@ -271,9 +252,7 @@ function ClientApp() {
                                     <Calendar 
                                         onDateSelect={setSelectedDate} 
                                         selectedDate={selectedDate}
-                                        profesional={selectedProfesional?.esMultiple ? selectedProfesional.asignaciones[0]?.profesional : selectedProfesional}
-                                        service={selectedService}
-                                        onHorariosCargados={setHorariosPorDia}
+                                        profesional={selectedProfesional}
                                     />
                                 </div>
                             )}
@@ -281,24 +260,13 @@ function ClientApp() {
                             {/* SECCIÓN 4: HORARIOS */}
                             {selectedDate && (
                                 <div id="time-section">
-                                    {selectedService.esMultiple ? (
-                                        <MultiTimeSlots
-                                            service={selectedService}
-                                            date={selectedDate}
-                                            profesional={selectedProfesional}
-                                            onTimeSelect={setSelectedTime}
-                                            selectedTime={selectedTime}
-                                        />
-                                    ) : (
-                                        <TimeSlots
-                                            service={selectedService}
-                                            date={selectedDate}
-                                            profesional={selectedProfesional}
-                                            onTimeSelect={setSelectedTime}
-                                            selectedTime={selectedTime}
-                                            horariosPorDia={horariosPorDia}
-                                        />
-                                    )}
+                                    <TimeSlots 
+                                        service={selectedService}
+                                        date={selectedDate}
+                                        profesional={selectedProfesional}
+                                        onTimeSelect={setSelectedTime}
+                                        selectedTime={selectedTime}
+                                    />
                                 </div>
                             )}
                             
