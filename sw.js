@@ -1,6 +1,6 @@
 // sw.js - Service Worker para Morena nails
 
-const CACHE_NAME = 'morena-nails-v25';
+const CACHE_NAME = 'morena-nails-v49';
 const urlsToCache = [
   '/morena-nails/',
   '/morena-nails/index.html',
@@ -17,7 +17,16 @@ const urlsToCache = [
   '/morena-nails/icons/icon-152x152.png',
   '/morena-nails/icons/icon-192x192.png',
   '/morena-nails/icons/icon-384x384.png',
-  '/morena-nails/icons/icon-512x512.png'
+  '/morena-nails/icons/icon-512x512.png',
+  '/morena-nails/vendor/react.production.min.js',
+  '/morena-nails/vendor/react-dom.production.min.js',
+  '/morena-nails/vendor/babel.min.js',
+  '/morena-nails/vendor/bcrypt.min.js',
+  '/morena-nails/vendor/tailwind-browser.js',
+  '/morena-nails/vendor/lucide/lucide.css',
+  '/morena-nails/vendor/lucide/lucide.woff2',
+  '/morena-nails/utils/push-config.js',
+  '/morena-nails/utils/push-notifications.js'
 ];
 
 // ============================================
@@ -137,6 +146,51 @@ self.addEventListener('message', event => {
       });
     });
   }
+});
+
+// ============================================
+// WEB PUSH OPCIONAL
+// ============================================
+self.addEventListener('push', event => {
+  let payload = {};
+
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (error) {
+    payload = {
+      title: 'RservasRoma',
+      body: event.data ? event.data.text() : 'Tienes una nueva notificación'
+    };
+  }
+
+  const title = payload.title || 'RservasRoma';
+  const options = {
+    body: payload.body || 'Tienes una nueva notificación',
+    icon: '/morena-nails/icons/icon-192x192.png',
+    badge: '/morena-nails/icons/icon-96x96.png',
+    tag: payload.tag || 'rservasroma',
+    data: {
+      url: payload.url || '/morena-nails/admin.html',
+      ...(payload.data || {})
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+
+  const targetUrl = event.notification?.data?.url || '/morena-nails/admin.html';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl) && 'focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+      return null;
+    })
+  );
 });
 
 console.log('✅ Service Worker configurado para Morena nails');

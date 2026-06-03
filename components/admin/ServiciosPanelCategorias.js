@@ -20,8 +20,30 @@ function categoriaIcono(categoria) {
     return categoria?.icono || '⭐';
 }
 
+function formatearListaHorasAdmin(horas = []) {
+    return horas.map(hora => window.formatTo12Hour ? window.formatTo12Hour(hora) : hora).join(', ');
+}
+
+function categoriaCoincideServicio(categoria, valorNormalizado) {
+    if (!categoria || !valorNormalizado) return false;
+    return [categoriaId(categoria), categoria.id, categoria.slug, categoriaNombre(categoria)]
+        .some(valor => normalizarTextoServicio(valor) === valorNormalizado);
+}
+
+function resolverCategoriaGuardadaServicio(valor, categorias = []) {
+    const normalizada = normalizarTextoServicio(valor);
+    if (!normalizada) return '';
+
+    const categoria = categorias.find(item => categoriaCoincideServicio(item, normalizada));
+    if (categoria) return categoriaId(categoria);
+
+    const conocidas = ['manicura', 'pedicura', 'faciales', 'barberia', 'cejas', 'combos', 'otros'];
+    return conocidas.includes(normalizada) ? normalizada : '';
+}
+
 function inferirCategoriaServicio(servicio, categorias = []) {
-    if (servicio?.categoria) return servicio.categoria;
+    const categoriaGuardada = resolverCategoriaGuardadaServicio(servicio?.categoria, categorias);
+    if (categoriaGuardada) return categoriaGuardada;
 
     const texto = normalizarTextoServicio(`${servicio?.nombre || ''} ${servicio?.descripcion || ''}`);
     if (texto.includes('pedic') || texto.includes('pie')) return 'pedicura';
@@ -44,10 +66,12 @@ function ServiciosPanel() {
     const [mostrarForm, setMostrarForm] = React.useState(false);
     const [editando, setEditando] = React.useState(null);
     const [cargando, setCargando] = React.useState(true);
+    const datosCargadosRef = React.useRef(false);
     const [busqueda, setBusqueda] = React.useState('');
     const [categoriaActiva, setCategoriaActiva] = React.useState('todos');
     const [servicioParaAsignar, setServicioParaAsignar] = React.useState(null);
     const [mostrarCategorias, setMostrarCategorias] = React.useState(false);
+    const formularioRef = React.useRef(null);
 
     React.useEffect(() => {
         cargarDatos();
@@ -63,7 +87,8 @@ function ServiciosPanel() {
     }, []);
 
     const cargarDatos = async () => {
-        setCargando(true);
+        const mostrarIndicador = !datosCargadosRef.current;
+        if (mostrarIndicador) setCargando(true);
         try {
             const [listaServicios, listaCategorias] = await Promise.all([
                 window.salonServicios?.getAll(false) || [],
@@ -74,7 +99,8 @@ function ServiciosPanel() {
         } catch (error) {
             console.error('Error cargando servicios/categorias:', error);
         } finally {
-            setCargando(false);
+            datosCargadosRef.current = true;
+            if (mostrarIndicador) setCargando(false);
         }
     };
 
@@ -83,6 +109,12 @@ function ServiciosPanel() {
         ...categorias.filter(c => c.activo !== false),
         { id: 'inactivos', slug: 'inactivos', nombre: 'Inactivos', icono: '⏸️', activo: true }
     ]), [categorias]);
+
+    React.useEffect(() => {
+        if (!categoriasFiltro.some(categoria => categoriaId(categoria) === categoriaActiva)) {
+            setCategoriaActiva('todos');
+        }
+    }, [categoriasFiltro, categoriaActiva]);
 
     const serviciosFiltrados = React.useMemo(() => {
         const q = normalizarTextoServicio(busqueda);
@@ -103,8 +135,15 @@ function ServiciosPanel() {
     };
 
     const guardarServicio = async (servicio) => {
-        if (editando) await window.salonServicios.actualizar(editando.id, servicio);
-        else await window.salonServicios.crear(servicio);
+        const resultado = editando
+            ? await window.salonServicios.actualizar(editando.id, servicio)
+            : await window.salonServicios.crear(servicio);
+
+        if (!resultado) {
+            alert('No se pudo guardar el servicio. Revisa la consola para ver el detalle de Supabase.');
+            return;
+        }
+
         setMostrarForm(false);
         setEditando(null);
         await cargarDatos();
@@ -117,6 +156,7 @@ function ServiciosPanel() {
             duracion: servicio.duracion,
             precio: servicio.precio,
             descripcion: servicio.descripcion || '',
+            imagen: servicio.imagen || null,
             horarios_permitidos: servicio.horarios_permitidos || []
         });
         await cargarDatos();
@@ -131,6 +171,14 @@ function ServiciosPanel() {
     const toggleActivo = async (servicio) => {
         await window.salonServicios.actualizar(servicio.id, { activo: !servicio.activo });
         await cargarDatos();
+    };
+
+    const abrirFormularioServicio = (servicio = null) => {
+        setEditando(servicio);
+        setMostrarForm(true);
+        setTimeout(() => {
+            formularioRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
     };
 
     if (cargando) {
@@ -158,7 +206,7 @@ function ServiciosPanel() {
                         <button onClick={() => setMostrarCategorias(!mostrarCategorias)} className="border border-pink-200 text-pink-700 px-4 py-3 rounded-lg hover:bg-pink-50 font-semibold">
                             ⚙️ Categorías
                         </button>
-                        <button onClick={() => { setEditando(null); setMostrarForm(true); }} className="bg-pink-600 text-white px-4 py-3 rounded-lg hover:bg-pink-700 font-semibold shadow-sm">
+                        <button onClick={() => abrirFormularioServicio()} className="bg-pink-600 text-white px-4 py-3 rounded-lg hover:bg-pink-700 font-semibold shadow-sm">
                             + Nuevo servicio
                         </button>
                     </div>
@@ -206,12 +254,14 @@ function ServiciosPanel() {
             )}
 
             {mostrarForm && (
-                <ServicioFormCategorias
-                    servicio={editando}
-                    categorias={categorias}
-                    onGuardar={guardarServicio}
-                    onCancelar={() => { setMostrarForm(false); setEditando(null); }}
-                />
+                <div ref={formularioRef} className="scroll-mt-4">
+                    <ServicioFormCategorias
+                        servicio={editando}
+                        categorias={categorias}
+                        onGuardar={guardarServicio}
+                        onCancelar={() => { setMostrarForm(false); setEditando(null); }}
+                    />
+                </div>
             )}
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
@@ -226,7 +276,15 @@ function ServiciosPanel() {
                         return (
                             <div key={servicio.id} className={`bg-white border rounded-xl p-4 shadow-sm transition hover:shadow-md ${servicio.activo === false ? 'opacity-60 border-gray-200 bg-gray-50' : 'border-gray-100'}`}>
                                 <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
+                                    {servicio.imagen && (
+                                        <img
+                                            src={servicio.imagen}
+                                            alt={servicio.nombre}
+                                            className="h-20 w-20 rounded-lg object-cover border border-gray-100 shrink-0"
+                                            loading="lazy"
+                                        />
+                                    )}
+                                    <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-2 flex-wrap">
                                             <span className="text-2xl">{categoriaIcono(categoria)}</span>
                                             <h3 className="font-bold text-gray-900 text-lg truncate">{servicio.nombre}</h3>
@@ -240,11 +298,11 @@ function ServiciosPanel() {
                                             </button>
                                         </div>
                                         {servicio.descripcion && <p className="text-sm text-gray-500 mt-3 line-clamp-2">{servicio.descripcion}</p>}
-                                        {servicio.horarios_permitidos?.length > 0 && <p className="text-xs text-pink-600 mt-3">🕐 Horarios permitidos: {servicio.horarios_permitidos.join(', ')}</p>}
+                                        {servicio.horarios_permitidos?.length > 0 && <p className="text-xs text-pink-600 mt-3">🕐 Horarios permitidos: {formatearListaHorasAdmin(servicio.horarios_permitidos)}</p>}
                                     </div>
                                     <div className="flex gap-1 shrink-0">
                                         <button onClick={() => setServicioParaAsignar(servicio)} className="w-9 h-9 rounded-lg hover:bg-purple-50 text-purple-600" title="Asignar profesionales">👥</button>
-                                        <button onClick={() => { setEditando(servicio); setMostrarForm(true); }} className="w-9 h-9 rounded-lg hover:bg-blue-50 text-blue-600" title="Editar">✏️</button>
+                                        <button onClick={() => abrirFormularioServicio(servicio)} className="w-9 h-9 rounded-lg hover:bg-blue-50 text-blue-600" title="Editar">✏️</button>
                                         <button onClick={() => duplicarServicio(servicio)} className="w-9 h-9 rounded-lg hover:bg-amber-50 text-amber-600" title="Duplicar">📄</button>
                                         <button onClick={() => eliminarServicio(servicio.id)} className="w-9 h-9 rounded-lg hover:bg-red-50 text-red-600" title="Eliminar">🗑️</button>
                                     </div>
@@ -394,7 +452,7 @@ function ServicioFormCategorias({ servicio, categorias, onGuardar, onCancelar })
         const duracion = parseInt(form.duracion, 10);
         const precio = parseFloat(form.precio);
         if (!form.nombre.trim()) return alert('El nombre del servicio es obligatorio');
-        if (isNaN(duracion) || duracion < 15) return alert('La duración debe ser al menos 15 minutos');
+        if (isNaN(duracion) || duracion < 3) return alert('La duración debe ser al menos 3 minutos');
         if (isNaN(precio) || precio < 0) return alert('El precio debe ser válido');
 
         let horarios = [];
